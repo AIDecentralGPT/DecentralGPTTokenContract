@@ -20,6 +20,12 @@ contract Token is Initializable, ERC20Upgradeable, OwnableUpgradeable, ERC20Perm
     mapping(address => LockInfo[]) walletLockBlock;
     address[] public lockTransferAdmins;
 
+    uint256 public  initSupply;
+    uint256 public  maxSupply;
+    uint256 public alreadyMinted;
+
+    mapping(address => uint256) public minter2MintAmount;
+
     event LockDisabled(uint256 timestamp, uint256 blockNumber);
     event LockEnabled(uint256 timestamp, uint256 blockNumber);
 
@@ -48,8 +54,25 @@ contract Token is Initializable, ERC20Upgradeable, OwnableUpgradeable, ERC20Perm
         __ERC20_init("DecentralGPT", "DGC");
         __Ownable_init(initialOwner);
 
-        _mint(owner(), 600_000_000_000 * 10 ** decimals());
+        initSupply = 600_000_000_000 * 10 ** decimals();
+        maxSupply = 1_000_000_000_000 * 10 ** decimals();
+        alreadyMinted = initSupply;
+        _mint(owner(), initSupply);
         isLockActive = true;
+    }
+
+    function setMinter(address minter, uint256 amount) external onlyOwner {
+        require(amount <= maxSupply - alreadyMinted, "max supply reached");
+        minter2MintAmount[minter] = amount;
+    }
+
+    function mint(address to, uint256 amount) external {
+        uint256 totalAmount = minter2MintAmount[msg.sender];
+        require(totalAmount >= amount , "can not mint");
+        require(alreadyMinted + amount <= maxSupply, "max supply reached");
+        _mint(to, amount);
+        minter2MintAmount[msg.sender] = totalAmount - amount;
+        alreadyMinted += amount;
     }
 
     receive() external payable {}
@@ -175,5 +198,9 @@ contract Token is Initializable, ERC20Upgradeable, OwnableUpgradeable, ERC20Perm
 
     function addLockTransferAdmin(address wallet) external onlyOwner {
         lockTransferAdmins.push(wallet);
+    }
+
+    function version() external pure returns(uint256) {
+        return 1;
     }
 }
