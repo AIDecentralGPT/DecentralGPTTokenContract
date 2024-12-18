@@ -9,14 +9,14 @@ require('@openzeppelin/hardhat-upgrades');
 
 
 const config: HardhatUserConfig = {
-  solidity: "0.8.20",
+  solidity: "0.8.22",
   sourcify: {
     // Enable Sourcify verification by default
     enabled: true,
   },
   networks: {
     bitlayertestnet: {
-      url: 'https://testnet-rpc.bitlayer.org', 
+      url: 'https://testnet-rpc.bitlayer.org',
       chainId: 200810,
       // accounts: ["b5eb18473a135e9edf076c00df53d76575fa86bca530c7a650921161189a4ac"],
       accounts: [process.env.PRIVATE_KEY],
@@ -38,9 +38,7 @@ const config: HardhatUserConfig = {
     },
     dbcMainnet: {
       url: 'https://rpc.dbcwallet.io',
-      accounts: {
-        mnemonic: process.env.MNEMONIC || '',
-      },
+      accounts: [process.env.PRIVATE_KEY],
       chainId: 19880818,
       timeout: 600000,
     }
@@ -52,7 +50,7 @@ const config: HardhatUserConfig = {
       // An API key needs to be written as the hardhat-verify plugin will require it, and the verification will fail if it is not provided.
       // The current bitlayer browser has not yet enabled API key verification, so you can write any random string for now.
       bitlayertestnet: "1234",
-      bscTestnet: 'UQVW6HJ4ZV4U75BE2PKIGT7IT14ASHK3G1'
+      bscTestnet: process.env.BSC_TESTNET_API_KEY
     },
     customChains: [
       {
@@ -75,15 +73,14 @@ const config: HardhatUserConfig = {
         network: "dbcMainnet",
         chainId: 19880818,
         urls: {
-          apiURL: "https://blockscout.dbcscan.io/api",
-          browserURL: "https://blockscout.dbcscan.io",
+          apiURL: "https://www.dbcscan.io/api",
+          browserURL: "https://www.dbcscan.io",
         },
       }
     ]
   }
 };
 
-// proxy:0x54d6F84B8337a897238C0C07C2ebbf74fcb087BC
-// logic:0x8a26580DA88DB2E88c48E5694B5F0eF634855C4D
+
 
 export default config;
