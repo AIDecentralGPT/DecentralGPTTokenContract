@@ -8,9 +8,11 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20PermitUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+
 import "./MultiSigTimeLock.sol";
 
-contract Token is Initializable, ERC20Upgradeable, OwnableUpgradeable, ERC20PermitUpgradeable, ERC20BurnableUpgradeable, ReentrancyGuardUpgradeable {
+contract Token is Initializable, ERC20Upgradeable, ERC20PermitUpgradeable, ERC20BurnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUpgradeable  {
     MultiSigTimeLock public timeLock;
 
     using SafeERC20 for IERC20;
@@ -27,67 +29,78 @@ contract Token is Initializable, ERC20Upgradeable, OwnableUpgradeable, ERC20Perm
 
     uint256 public initSupply;
     uint256 public maxSupply;
-    uint256 public alreadyMinted;
-    uint256 public supplyForStaking;
-    uint256 public supplyForOrionStaking;
 
     mapping(address => uint256) public minter2MintAmount;
     mapping(address => bool) public lockTransferAdmins;
+
+    address public canUpgradeAddress;
+    bool public disableUpgrade;
 
     event LockDisabled(uint256 timestamp, uint256 blockNumber);
     event LockEnabled(uint256 timestamp, uint256 blockNumber);
     event TransferAndLock(address indexed from, address indexed to, uint256 value, uint256 blockNumber);
     event UpdateLockDuration(address indexed wallet, uint256 lockSeconds);
     event Mint(address indexed to, uint256 amount);
+    event AddLockTransferAdmin(address indexed addr);
+    event RemoveLockTransferAdmin(address indexed addr);
+    event AuthorizedUpgradeSelf(address indexed canUpgradeAddress);
+    event DisableContractUpgrade(uint256 timestamp);
 
     modifier onlyLockTransferAdmin() {
         require(lockTransferAdmins[msg.sender], "Not lock transfer admin");
         _;
     }
 
-
     modifier onlyMultiSigTimeLockContract() {
         require(msg.sender == address(timeLock), "Not multi sig time lock contract");
         _;
     }
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() initializer {}
+
+    function _authorizeUpgrade(address newImplementation) internal override  {
+        require(disableUpgrade == false,"Has disabled upgrade");
+        require(msg.sender == canUpgradeAddress, "Only canUpgradeAddress can upgrade");
+        require(newImplementation != address(0), "Invalid implementation address");
+        canUpgradeAddress = address(0);
+    }
+
     function initialize(address initialOwner,address timeLockAddress) public initializer {
         __ERC20_init("DecentralGPT", "DGC");
-        __Ownable_init(initialOwner);
         __ReentrancyGuard_init();
-
+        __ERC20Permit_init("DecentralGPT");
+        __ERC20Burnable_init();
+        __UUPSUpgradeable_init();
 
         maxSupply = 1000_000_000_000 * 10 ** decimals();
-        supplyForStaking = 400_000_000_000 * 10 ** decimals();
-        supplyForOrionStaking = 45_000_000_000 * 10 ** decimals();
-        initSupply = maxSupply - supplyForStaking - supplyForOrionStaking;
-        alreadyMinted = initSupply;
+        initSupply = maxSupply;
 
-        _mint(owner(), initSupply);
+        _mint(initialOwner, initSupply);
         isLockActive = true;
         timeLock = MultiSigTimeLock(timeLockAddress);
     }
 
-    function requestSetMinter(address minter, uint256 amount) external pure returns (bytes memory) {
-        bytes memory data = abi.encodeWithSignature("mint(address,uint256)", minter, amount);
+
+    function requestSetUpgradePermission(address _canUpgradeAddress) external pure returns (bytes memory) {
+        bytes memory data = abi.encodeWithSignature("setUpgradePermission(address)",_canUpgradeAddress);
         return data;
     }
 
-    function setMinter(address minter, uint256 amount) external onlyMultiSigTimeLockContract {
-        require(amount <= maxSupply - alreadyMinted, "Max supply reached");
-        minter2MintAmount[minter] = amount;
+    function setUpgradePermission(address _canUpgradeAddress) external onlyMultiSigTimeLockContract {
+        require(disableUpgrade == false, "Contract upgrade is disabled");
+        canUpgradeAddress = _canUpgradeAddress;
+        emit AuthorizedUpgradeSelf(_canUpgradeAddress);
     }
 
-    function mint(address to, uint256 amount) external {
-        uint256 totalAmount = minter2MintAmount[msg.sender];
-        require(totalAmount >= amount, "Mint amount exceeds allowance");
-        require(alreadyMinted + amount <= maxSupply, "Max supply reached");
+    function requestDisableContractUpgrade() external pure returns (bytes memory) {
+        bytes memory data = abi.encodeWithSignature("disableContractUpgrade()");
+        return data;
+    }
 
-        _mint(to, amount);
-        minter2MintAmount[msg.sender] -= amount;
-        alreadyMinted += amount;
-
-        emit Mint(to, amount);
+    function disableContractUpgrade() external onlyMultiSigTimeLockContract  {
+        disableUpgrade = true;
+        emit DisableContractUpgrade(block.timestamp);
     }
 
     function requestDisableLockPermanently() external pure returns (bytes memory) {
@@ -150,6 +163,19 @@ contract Token is Initializable, ERC20Upgradeable, OwnableUpgradeable, ERC20Perm
         return super.transfer(to, amount);
     }
 
+    function transferFrom(address from, address to, uint256 amount) public virtual override returns (bool) {
+        if (to == address(0) || amount == 0) {
+            return super.transferFrom(from, to, amount);
+        }
+
+        if (isLockActive && walletLockTimestamp[msg.sender].length > 0) {
+            require(canTransferAmount(msg.sender, amount), "Insufficient unlocked balance");
+        }
+
+        // 调用父合约的 transferFrom 方法
+        return super.transferFrom(from, to, amount);
+    }
+
     function canTransferAmount(address from, uint256 transferAmount) internal view returns (bool) {
         uint256 lockedAmount = calculateLockedAmount(from);
         uint256 availableAmount = balanceOf(from) - lockedAmount;
@@ -194,13 +220,15 @@ contract Token is Initializable, ERC20Upgradeable, OwnableUpgradeable, ERC20Perm
 
     function addLockTransferAdmin(address addr) external onlyMultiSigTimeLockContract {
         lockTransferAdmins[addr] = true;
+        emit AddLockTransferAdmin(addr);
     }
 
     function removeLockTransferAdmin(address addr) external onlyMultiSigTimeLockContract {
         lockTransferAdmins[addr] = false;
+        emit RemoveLockTransferAdmin(addr);
     }
 
     function version() external pure returns (uint256) {
-        return 1;
+        return 0;
     }
 }
