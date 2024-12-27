@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 pragma solidity ^0.8.22;
+
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20BurnableUpgradeable.sol";
@@ -12,7 +13,14 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 import "./MultiSigTimeLock.sol";
 
-contract Token is Initializable, ERC20Upgradeable, ERC20PermitUpgradeable, ERC20BurnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUpgradeable  {
+contract Token is
+    Initializable,
+    ERC20Upgradeable,
+    ERC20PermitUpgradeable,
+    ERC20BurnableUpgradeable,
+    ReentrancyGuardUpgradeable,
+    UUPSUpgradeable
+{
     MultiSigTimeLock public timeLock;
 
     using SafeERC20 for IERC20;
@@ -59,14 +67,14 @@ contract Token is Initializable, ERC20Upgradeable, ERC20PermitUpgradeable, ERC20
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
 
-    function _authorizeUpgrade(address newImplementation) internal override  {
-        require(disableUpgrade == false,"Has disabled upgrade");
+    function _authorizeUpgrade(address newImplementation) internal override {
+        require(disableUpgrade == false, "Has disabled upgrade");
         require(msg.sender == canUpgradeAddress, "Only canUpgradeAddress can upgrade");
         require(newImplementation != address(0), "Invalid implementation address");
         canUpgradeAddress = address(0);
     }
 
-    function initialize(address initialOwner,address timeLockAddress) public initializer {
+    function initialize(address initialOwner, address timeLockAddress) public initializer {
         __ERC20_init("DecentralGPT", "DGC");
         __ReentrancyGuard_init();
         __ERC20Permit_init("DecentralGPT");
@@ -81,9 +89,8 @@ contract Token is Initializable, ERC20Upgradeable, ERC20PermitUpgradeable, ERC20
         timeLock = MultiSigTimeLock(timeLockAddress);
     }
 
-
     function requestSetUpgradePermission(address _canUpgradeAddress) external pure returns (bytes memory) {
-        bytes memory data = abi.encodeWithSignature("setUpgradePermission(address)",_canUpgradeAddress);
+        bytes memory data = abi.encodeWithSignature("setUpgradePermission(address)", _canUpgradeAddress);
         return data;
     }
 
@@ -98,7 +105,7 @@ contract Token is Initializable, ERC20Upgradeable, ERC20PermitUpgradeable, ERC20
         return data;
     }
 
-    function disableContractUpgrade() external onlyMultiSigTimeLockContract  {
+    function disableContractUpgrade() external onlyMultiSigTimeLockContract {
         disableUpgrade = true;
         emit DisableContractUpgrade(block.timestamp);
     }
@@ -118,14 +125,13 @@ contract Token is Initializable, ERC20Upgradeable, ERC20PermitUpgradeable, ERC20
         return data;
     }
 
-
     function enableLockPermanently() external onlyMultiSigTimeLockContract {
         isLockActive = true;
         emit LockEnabled(block.timestamp, block.number);
     }
 
-    function requestUpdateLockDuration(address wallet, uint256 lockSeconds) external pure returns (bytes memory)  {
-        bytes memory data = abi.encodeWithSignature("updateLockDuration(address,uint256)",wallet,lockSeconds);
+    function requestUpdateLockDuration(address wallet, uint256 lockSeconds) external pure returns (bytes memory) {
+        bytes memory data = abi.encodeWithSignature("updateLockDuration(address,uint256)", wallet, lockSeconds);
         return data;
     }
 
@@ -169,7 +175,7 @@ contract Token is Initializable, ERC20Upgradeable, ERC20PermitUpgradeable, ERC20
         }
 
         if (isLockActive && walletLockTimestamp[msg.sender].length > 0) {
-            require(canTransferAmount(msg.sender, amount), "Insufficient unlocked balance");
+            require(canTransferAmount(from, amount), "Insufficient unlocked balance");
         }
 
         // 调用父合约的 transferFrom 方法
@@ -209,12 +215,12 @@ contract Token is Initializable, ERC20Upgradeable, ERC20PermitUpgradeable, ERC20
     }
 
     function requestAddLockTransferAdmin(address addr) external pure returns (bytes memory) {
-        bytes memory data = abi.encodeWithSignature("addLockTransferAdmin(address)",addr);
+        bytes memory data = abi.encodeWithSignature("addLockTransferAdmin(address)", addr);
         return data;
     }
 
-    function requestRemoveLockTransferAdmin(address addr) external pure returns (bytes memory)  {
-        bytes memory data = abi.encodeWithSignature("removeLockTransferAdmin(address)",addr);
+    function requestRemoveLockTransferAdmin(address addr) external pure returns (bytes memory) {
+        bytes memory data = abi.encodeWithSignature("removeLockTransferAdmin(address)", addr);
         return data;
     }
 
