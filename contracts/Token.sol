@@ -96,6 +96,7 @@ contract Token is
 
     function setUpgradePermission(address _canUpgradeAddress) external onlyMultiSigTimeLockContract {
         require(disableUpgrade == false, "Contract upgrade is disabled");
+        require(_canUpgradeAddress != address(0), "Invalid implementation address");
         canUpgradeAddress = _canUpgradeAddress;
         emit AuthorizedUpgradeSelf(_canUpgradeAddress);
     }
@@ -174,7 +175,7 @@ contract Token is
             return super.transferFrom(from, to, amount);
         }
 
-        if (isLockActive && walletLockTimestamp[msg.sender].length > 0) {
+        if (isLockActive && walletLockTimestamp[from].length > 0) {
             require(canTransferAmount(from, amount), "Insufficient unlocked balance");
         }
 
