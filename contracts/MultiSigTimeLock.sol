@@ -248,6 +248,16 @@ contract MultiSigTimeLock is Initializable, UUPSUpgradeable {
 
         approvals[proposalId][msg.sender] = true;
 
+        uint256 approvalCount = 0;
+        for (uint256 i = 0; i < signers.length; i++) {
+            if (approvals[proposalId][signers[i]]) {
+                approvalCount++;
+            }
+        }
+        if (approvalCount >= requiredApproveCount) {
+            proposal.canExecuteAfterTimestamp = block.timestamp + minDelaySeconds;
+        }
+        
         emit ProposalApproved(proposalId, msg.sender);
     }
 
