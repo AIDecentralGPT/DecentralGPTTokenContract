@@ -128,7 +128,7 @@ contract MultiSigTimeLock is Initializable, UUPSUpgradeable {
             require(newMinDelaySeconds > 0, "Min delay should be > 0");
             require(newMinDelaySeconds != minDelaySeconds, "New min delay should be different from current");
         } else if (proposalType == ProposalType.UpgradeContract) {
-            require(canUpgradeAddress != address(0), "Invalid canUpgradeAddress address");
+            require(_canUpgradeAddress != address(0), "Invalid canUpgradeAddress address");
             require(disableUpgrade == false, "Contract upgrade is disabled");
             require(_canUpgradeAddress != canUpgradeAddress, "Already authorized");
         }
