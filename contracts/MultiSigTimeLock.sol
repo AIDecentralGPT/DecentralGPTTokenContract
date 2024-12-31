@@ -113,7 +113,6 @@ contract MultiSigTimeLock is Initializable, UUPSUpgradeable {
         require(block.timestamp <= _canVoteBeforeTimestamp, "Vote period passed");
         require(_canExecuteAfterTimestamp > _canVoteBeforeTimestamp, "Can execute after should be > can vote before");
         require(_canExecuteAfterTimestamp > block.timestamp, "Can execute after should be > current timestamp");
-        require(_canVoteBeforeTimestamp > block.timestamp, "Can vote before should be > current timestamp");
 
         if (proposalType == ProposalType.Normal) {
             require(target != address(0), "Invalid target address");
@@ -254,10 +253,11 @@ contract MultiSigTimeLock is Initializable, UUPSUpgradeable {
                 approvalCount++;
             }
         }
-        if (approvalCount >= requiredApproveCount) {
+        if (approvalCount == requiredApproveCount) {
             proposal.canExecuteAfterTimestamp = block.timestamp + minDelaySeconds;
+            proposal2ExecuteExpireAt[proposalId] = proposal.canExecuteAfterTimestamp + minDelaySeconds;
         }
-        
+
         emit ProposalApproved(proposalId, msg.sender);
     }
 
