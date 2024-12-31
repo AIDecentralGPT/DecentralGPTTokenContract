@@ -179,7 +179,6 @@ contract Token is
             require(canTransferAmount(from, amount), "Insufficient unlocked balance");
         }
 
-        // 调用父合约的 transferFrom 方法
         return super.transferFrom(from, to, amount);
     }
 
