@@ -8,7 +8,7 @@ dotenv.config();
 require("@openzeppelin/hardhat-upgrades");
 
 const config: HardhatUserConfig = {
-  solidity: "0.8.22",
+  solidity: "0.8.20",
   settings: {
     optimizer: {
       enabled: true,
