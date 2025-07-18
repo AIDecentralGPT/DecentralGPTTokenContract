@@ -10,22 +10,19 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20PermitUp
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-import "./MultiSigTimeLock.sol";
-
+/// @custom:oz-upgrades-from OldToken
 contract Token is
     Initializable,
     ERC20Upgradeable,
     ERC20PermitUpgradeable,
     ERC20BurnableUpgradeable,
     ReentrancyGuardUpgradeable,
-    UUPSUpgradeable
+    UUPSUpgradeable,
+    OwnableUpgradeable
 {
-    MultiSigTimeLock public timeLock;
-
     using SafeERC20 for IERC20;
-
-    bool public isLockActive;
 
     struct LockInfo {
         uint256 lockedAt;
@@ -33,16 +30,18 @@ contract Token is
         uint256 unlockAt;
     }
 
-    mapping(address => LockInfo[]) private walletLockTimestamp;
-
+    address public stakingContractAddress;
+    bool public isLockActive;
     uint256 public initSupply;
-    uint256 public maxSupply;
+    uint256 public supplyFixedYears;
+    uint256 public amountCanMintPerYear;
+    uint256 public lockLimit;
+    uint256 public deployedAt;
+    uint256 public amountToIAO;
 
-    mapping(address => uint256) public minter2MintAmount;
+    mapping(uint256 => uint256) public mintedPerYear;
+    mapping(address => LockInfo[]) private walletLockTimestamp;
     mapping(address => bool) public lockTransferAdmins;
-
-    address public canUpgradeAddress;
-    bool public disableUpgrade;
 
     event LockDisabled(uint256 timestamp, uint256 blockNumber);
     event LockEnabled(uint256 timestamp, uint256 blockNumber);
@@ -53,109 +52,71 @@ contract Token is
     event RemoveLockTransferAdmin(address indexed addr);
     event AuthorizedUpgradeSelf(address indexed canUpgradeAddress);
     event DisableContractUpgrade(uint256 timestamp);
+    event SetStakingContract(address indexed target);
 
-    modifier onlyLockTransferAdmin() {
-        require(lockTransferAdmins[msg.sender], "Not lock transfer admin");
-        _;
-    }
-
-    modifier onlyMultiSigTimeLockContract() {
-        require(msg.sender == address(timeLock), "Not multi sig time lock contract");
-        _;
-    }
-
-    modifier onlySigner() {
-        require(isSigner(msg.sender), "Not signer");
+    modifier onlyLockTransferAdminOrOwner() {
+        require(lockTransferAdmins[msg.sender] || msg.sender == owner(), "Not lock transfer admin");
         _;
     }
 
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() initializer {}
-
-    function _authorizeUpgrade(address newImplementation) internal override {
-        require(disableUpgrade == false, "Has disabled upgrade");
-        require(msg.sender == canUpgradeAddress, "Only canUpgradeAddress can upgrade");
-        require(newImplementation != address(0), "Invalid implementation address");
-        canUpgradeAddress = address(0);
+    constructor() {
+        _disableInitializers();
     }
 
-    function initialize(address initialOwner, address timeLockAddress) public initializer {
-        __ERC20_init("DecentralGPT", "DGC");
+    function initialize(
+        address initialOwner
+    ) public initializer {
+         __ERC20_init("DecentralGPT", "DGC");
         __ReentrancyGuard_init();
         __ERC20Permit_init("DecentralGPT");
         __ERC20Burnable_init();
         __UUPSUpgradeable_init();
+        __Ownable_init(initialOwner);
 
-        maxSupply = 1000_000_000_000 * 10 ** decimals();
-        initSupply = maxSupply;
+        supplyFixedYears = 4;
+        amountCanMintPerYear = 50_000_000_000 * 10 ** decimals();
 
+        initSupply = 400_000_000_000 * 10 ** decimals();
         _mint(initialOwner, initSupply);
         isLockActive = true;
-        timeLock = MultiSigTimeLock(timeLockAddress);
+        deployedAt = block.timestamp;
     }
 
-    function requestSetUpgradePermission(address _canUpgradeAddress) external pure returns (bytes memory) {
-        bytes memory data = abi.encodeWithSignature("setUpgradePermission(address)", _canUpgradeAddress);
-        return data;
+    function _authorizeUpgrade(address newImplementation) internal view override onlyOwner {
+        require(newImplementation != address(0), "Invalid implementation address");
     }
 
-    function setUpgradePermission(address _canUpgradeAddress) external onlyMultiSigTimeLockContract {
-        require(disableUpgrade == false, "Contract upgrade is disabled");
-        require(_canUpgradeAddress != address(0), "Invalid implementation address");
-        canUpgradeAddress = _canUpgradeAddress;
-        emit AuthorizedUpgradeSelf(_canUpgradeAddress);
-    }
-
-    function requestDisableContractUpgrade() external pure returns (bytes memory) {
-        bytes memory data = abi.encodeWithSignature("disableContractUpgrade()");
-        return data;
-    }
-
-    function disableContractUpgrade() external onlyMultiSigTimeLockContract {
-        disableUpgrade = true;
-        emit DisableContractUpgrade(block.timestamp);
-    }
-
-    function requestDisableLockPermanently() external pure returns (bytes memory) {
-        bytes memory data = abi.encodeWithSignature("disableLockPermanently()");
-        return data;
-    }
-
-    function disableLockPermanently() external onlyMultiSigTimeLockContract {
+    function disableLockPermanently() external onlyOwner {
         isLockActive = false;
         emit LockDisabled(block.timestamp, block.number);
     }
 
-    function requestEnableLockPermanently() external pure returns (bytes memory) {
-        bytes memory data = abi.encodeWithSignature("enableLockPermanently()");
-        return data;
-    }
-
-    function enableLockPermanently() external onlyMultiSigTimeLockContract {
+    function enableLockPermanently() external onlyOwner {
         isLockActive = true;
         emit LockEnabled(block.timestamp, block.number);
     }
 
-    function requestUpdateLockDuration(address wallet, uint256 lockSeconds) external pure returns (bytes memory) {
-        bytes memory data = abi.encodeWithSignature("updateLockDuration(address,uint256)", wallet, lockSeconds);
-        return data;
+    function updateLockLimit(uint256 _lockLimit) external onlyOwner {
+        lockLimit = _lockLimit;
     }
 
-    function updateLockDuration(address wallet, uint256 lockSeconds) external onlyMultiSigTimeLockContract {
-        LockInfo[] storage lockInfos = walletLockTimestamp[wallet];
-        for (uint256 i = 0; i < lockInfos.length; i++) {
-            lockInfos[i].unlockAt = lockInfos[i].lockedAt + lockSeconds;
-        }
-        emit UpdateLockDuration(wallet, lockSeconds);
-    }
+    // function updateLockDuration(address wallet, uint256 lockSeconds) external onlyOwner {
+    //     require(wallet != owner(), "Invalid wallet address");
+    //     LockInfo[] storage lockInfos = walletLockTimestamp[wallet];
+    //     for (uint256 i = 0; i < lockInfos.length; i++) {
+    //         lockInfos[i].unlockAt = lockInfos[i].lockedAt + lockSeconds;
+    //     }
+    //     emit UpdateLockDuration(wallet, lockSeconds);
+    // }
 
-    function transferAndLock(address to, uint256 value, uint256 lockSeconds) external onlyLockTransferAdmin {
+    function transferAndLock(address to, uint256 value, uint256 lockSeconds) external onlyLockTransferAdminOrOwner {
         require(lockSeconds > 0, "Invalid lock duration");
         uint256 lockedAt = block.timestamp;
         uint256 unLockAt = lockedAt + lockSeconds;
 
         LockInfo[] storage infos = walletLockTimestamp[to];
-        require(infos.length < 100, "Too many lock entries"); // Limit lock entries
+        require(infos.length < lockLimit, "Too many lock entries"); // Limit lock entries
 
         infos.push(LockInfo(lockedAt, value, unLockAt));
         transfer(to, value);
@@ -187,8 +148,42 @@ contract Token is
         return super.transferFrom(from, to, amount);
     }
 
-    function canTransferAmount(address from, uint256 transferAmount) internal view returns (bool) {
-        uint256 lockedAmount = calculateLockedAmount(from);
+    function setStakingContract(address stakingContract) external onlyOwner {
+        stakingContractAddress = stakingContract;
+        emit SetStakingContract(stakingContract);
+    }
+
+    function mint() external {
+        require(stakingContractAddress != address(0), "Invalid staking contract address");
+        uint256 yearsSinceDeploy = (block.timestamp - deployedAt) / 365 days;
+        require(yearsSinceDeploy >= supplyFixedYears, "Minting not allowed yet");
+        require(mintedPerYear[yearsSinceDeploy] < amountCanMintPerYear, "Exceeds annual mint limit");
+
+        mintedPerYear[yearsSinceDeploy] += amountCanMintPerYear;
+        _mint(stakingContractAddress, amountCanMintPerYear);
+        emit Mint(stakingContractAddress, amountCanMintPerYear);
+    }
+
+    function calculateLockedAmountAndUpdate(address from) public returns (uint256) {
+        LockInfo[] storage lockInfos = walletLockTimestamp[from];
+        uint256 lockedAmount = 0;
+        uint256 i = 0;
+
+        while (i < lockInfos.length) {
+            if (block.timestamp < lockInfos[i].unlockAt) {
+                lockedAmount += lockInfos[i].lockedAmount;
+                i++;
+            } else {
+                lockInfos[i] = lockInfos[lockInfos.length - 1];
+                lockInfos.pop();
+            }
+        }
+
+        return lockedAmount;
+    }
+
+    function canTransferAmount(address from, uint256 transferAmount) internal returns (bool) {
+        uint256 lockedAmount = calculateLockedAmountAndUpdate(from);
         uint256 availableAmount = balanceOf(from) - lockedAmount;
         return availableAmount >= transferAmount;
     }
@@ -219,38 +214,27 @@ contract Token is
         return (lockInfo.lockedAmount, lockInfo.unlockAt);
     }
 
-    function requestAddLockTransferAdmin(address addr) external pure returns (bytes memory) {
-        bytes memory data = abi.encodeWithSignature("addLockTransferAdmin(address)", addr);
-        return data;
+    function getLockInfos(address caller) public view returns (LockInfo[] memory) {
+        LockInfo[] memory lockInfos = walletLockTimestamp[caller];
+        return lockInfos;
     }
 
-    function requestRemoveLockTransferAdmin(address addr) external pure returns (bytes memory) {
-        bytes memory data = abi.encodeWithSignature("removeLockTransferAdmin(address)", addr);
-        return data;
-    }
-
-    function addLockTransferAdmin(address addr) external onlyMultiSigTimeLockContract {
+    function addLockTransferAdmin(address addr) external onlyOwner {
         lockTransferAdmins[addr] = true;
         emit AddLockTransferAdmin(addr);
     }
 
-    function removeLockTransferAdmin(address addr) external onlyMultiSigTimeLockContract {
+    function removeLockTransferAdmin(address addr) external onlyOwner {
         lockTransferAdmins[addr] = false;
         emit RemoveLockTransferAdmin(addr);
     }
 
+    function lockSize(address addr) external view returns (uint256) {
+        LockInfo[] memory lockInfos = walletLockTimestamp[addr];
+        return lockInfos.length;
+    }
+
     function version() external pure returns (uint256) {
         return 0;
-    }
-
-    function addLockTransferAdminBySigner(address addr) external onlySigner {
-        lockTransferAdmins[addr] = true;
-        emit AddLockTransferAdmin(addr);
-    }
-
-    function isSigner(address addr) public pure returns (bool) {
-        return addr == address(0x73bf0F2a651A916cFDd5903a4c1DA24857F8590b)
-            || addr == address(0xCC35c1491617d0Bd0FADa419C47570916B9cCc49)
-            || addr == address(0x009847c3Eb545b7f1Ea2B05a1ABef6920b58e54F);
     }
 }
