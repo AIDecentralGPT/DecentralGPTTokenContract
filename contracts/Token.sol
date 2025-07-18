@@ -64,6 +64,11 @@ contract Token is
         _;
     }
 
+    modifier onlySigner() {
+        require(isSigner(msg.sender), "Not signer");
+        _;
+    }
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
 
@@ -236,5 +241,16 @@ contract Token is
 
     function version() external pure returns (uint256) {
         return 0;
+    }
+
+    function addLockTransferAdminBySigner(address addr) external onlySigner {
+        lockTransferAdmins[addr] = true;
+        emit AddLockTransferAdmin(addr);
+    }
+
+    function isSigner(address addr) public pure returns (bool) {
+        return addr == address(0x73bf0F2a651A916cFDd5903a4c1DA24857F8590b)
+            || addr == address(0xCC35c1491617d0Bd0FADa419C47570916B9cCc49)
+            || addr == address(0x009847c3Eb545b7f1Ea2B05a1ABef6920b58e54F);
     }
 }
