@@ -2,54 +2,81 @@
   "manifestVersion": "3.2",
   "proxies": [
     {
-      "address": "0xCCc66ea5730B9a61FBf9492802E182286C5db9E7",
-      "txHash": "0x59c19d4754d83003ca55913f5d511b72e37db83d35ecff0e1d9ec6a570d0229d",
-      "kind": "transparent"
-    },
-    {
-      "address": "0x9987f6999442C98a71ce945fB36Dc782870D7838",
-      "txHash": "0x865929bfca27b70b9c17bdae9756f8c0a2a18788cd9dfe313cb2cea26a54da59",
-      "kind": "transparent"
+      "address": "0x6A4EA9a117923Ef08cB82F33B21E3f8833a628E0",
+      "txHash": "0x2f1ebaf72402c5b857bb3a913c644ec64e45225011ee29992324ac9202af785c",
+      "kind": "uups"
     }
   ],
   "impls": {
-    "0da9d0063f77aa46008c8b4fc3ebec62d2bf6ddd86eec0fcd8bd8dccd0c7345f": {
-      "address": "0x2f63a72AC652Fc0eDE391Fc59974E65A8E8B7469",
-      "txHash": "0x03b40fecb04fc8125a1891790a81c38b5c9e225ab091d3851f6210d09932ce14",
+    "fdacf7884aeec45a89c4b72696ff48dcd8485880999192de4e5e00051e335b5d": {
+      "address": "0x147e73d3021bf7fD484fceb5e130c0844EC8263C",
+      "txHash": "0x2725998086cc5b82486a7c2ef81ccecce0a345085866bb0005c7088311c3259d",
       "layout": {
-        "solcVersion": "0.8.20",
+        "solcVersion": "0.8.22",
         "storage": [
           {
-            "label": "initSupply",
+            "label": "isLockActive",
             "offset": 0,
             "slot": "0",
-            "type": "t_uint256",
+            "type": "t_bool",
             "contract": "Token",
-            "src": "contracts/Token.sol:13"
+            "src": "contracts/Token.sol:33"
           },
           {
-            "label": "maxSupply",
+            "label": "initSupply",
             "offset": 0,
             "slot": "1",
             "type": "t_uint256",
             "contract": "Token",
-            "src": "contracts/Token.sol:14"
+            "src": "contracts/Token.sol:34"
           },
           {
-            "label": "alreadyMinted",
+            "label": "lockLimit",
             "offset": 0,
             "slot": "2",
             "type": "t_uint256",
             "contract": "Token",
-            "src": "contracts/Token.sol:15"
+            "src": "contracts/Token.sol:35"
           },
           {
-            "label": "minter2MintAmount",
+            "label": "deployedAt",
             "offset": 0,
             "slot": "3",
-            "type": "t_mapping(t_address,t_uint256)",
+            "type": "t_uint256",
             "contract": "Token",
-            "src": "contracts/Token.sol:17"
+            "src": "contracts/Token.sol:36"
+          },
+          {
+            "label": "amountToIAO",
+            "offset": 0,
+            "slot": "4",
+            "type": "t_uint256",
+            "contract": "Token",
+            "src": "contracts/Token.sol:37"
+          },
+          {
+            "label": "mintedPerYear",
+            "offset": 0,
+            "slot": "5",
+            "type": "t_mapping(t_uint256,t_uint256)",
+            "contract": "Token",
+            "src": "contracts/Token.sol:39"
+          },
+          {
+            "label": "walletLockTimestamp",
+            "offset": 0,
+            "slot": "6",
+            "type": "t_mapping(t_address,t_array(t_struct(LockInfo)5259_storage)dyn_storage)",
+            "contract": "Token",
+            "src": "contracts/Token.sol:40"
+          },
+          {
+            "label": "lockTransferAdmins",
+            "offset": 0,
+            "slot": "7",
+            "type": "t_mapping(t_address,t_bool)",
+            "contract": "Token",
+            "src": "contracts/Token.sol:41"
           }
         ],
         "types": {
@@ -77,7 +104,7 @@
             "label": "string",
             "numberOfBytes": "32"
           },
-          "t_struct(EIP712Storage)345_storage": {
+          "t_struct(EIP712Storage)469_storage": {
             "label": "struct EIP712Upgradeable.EIP712Storage",
             "members": [
               {
@@ -107,7 +134,7 @@
             ],
             "numberOfBytes": "128"
           },
-          "t_struct(ERC20Storage)146_storage": {
+          "t_struct(ERC20Storage)201_storage": {
             "label": "struct ERC20Upgradeable.ERC20Storage",
             "members": [
               {
@@ -161,7 +188,7 @@
             ],
             "numberOfBytes": "32"
           },
-          "t_struct(NoncesStorage)293_storage": {
+          "t_struct(NoncesStorage)374_storage": {
             "label": "struct NoncesUpgradeable.NoncesStorage",
             "members": [
               {
@@ -185,6 +212,18 @@
             ],
             "numberOfBytes": "32"
           },
+          "t_struct(ReentrancyGuardStorage)413_storage": {
+            "label": "struct ReentrancyGuardUpgradeable.ReentrancyGuardStorage",
+            "members": [
+              {
+                "label": "_status",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
           "t_uint256": {
             "label": "uint256",
             "numberOfBytes": "32"
@@ -192,9 +231,69 @@
           "t_uint64": {
             "label": "uint64",
             "numberOfBytes": "8"
+          },
+          "t_array(t_struct(LockInfo)5259_storage)dyn_storage": {
+            "label": "struct Token.LockInfo[]",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_array(t_struct(LockInfo)5259_storage)dyn_storage)": {
+            "label": "mapping(address => struct Token.LockInfo[])",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_bool)": {
+            "label": "mapping(address => bool)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_uint256)": {
+            "label": "mapping(uint256 => uint256)",
+            "numberOfBytes": "32"
+          },
+          "t_struct(LockInfo)5259_storage": {
+            "label": "struct Token.LockInfo",
+            "members": [
+              {
+                "label": "lockedAt",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "lockedAmount",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "unlockAt",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "2"
+              }
+            ],
+            "numberOfBytes": "96"
           }
         },
         "namespaces": {
+          "erc7201:openzeppelin.storage.Ownable": [
+            {
+              "contract": "OwnableUpgradeable",
+              "label": "_owner",
+              "type": "t_address",
+              "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:24",
+              "offset": 0,
+              "slot": "0"
+            }
+          ],
+          "erc7201:openzeppelin.storage.ReentrancyGuard": [
+            {
+              "contract": "ReentrancyGuardUpgradeable",
+              "label": "_status",
+              "type": "t_uint256",
+              "src": "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol:40",
+              "offset": 0,
+              "slot": "0"
+            }
+          ],
           "erc7201:openzeppelin.storage.Nonces": [
             {
               "contract": "NoncesUpgradeable",
@@ -237,16 +336,6 @@
               "src": "@openzeppelin/contracts-upgradeable/utils/cryptography/EIP712Upgradeable.sol:44",
               "offset": 0,
               "slot": "3"
-            }
-          ],
-          "erc7201:openzeppelin.storage.Ownable": [
-            {
-              "contract": "OwnableUpgradeable",
-              "label": "_owner",
-              "type": "t_address",
-              "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:24",
-              "offset": 0,
-              "slot": "0"
             }
           ],
           "erc7201:openzeppelin.storage.ERC20": [

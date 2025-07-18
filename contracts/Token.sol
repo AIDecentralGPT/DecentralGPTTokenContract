@@ -12,7 +12,6 @@ import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-/// @custom:oz-upgrades-from OldToken
 contract Token is
     Initializable,
     ERC20Upgradeable,
@@ -30,11 +29,8 @@ contract Token is
         uint256 unlockAt;
     }
 
-    address public stakingContractAddress;
     bool public isLockActive;
     uint256 public initSupply;
-    uint256 public supplyFixedYears;
-    uint256 public amountCanMintPerYear;
     uint256 public lockLimit;
     uint256 public deployedAt;
     uint256 public amountToIAO;
@@ -52,7 +48,6 @@ contract Token is
     event RemoveLockTransferAdmin(address indexed addr);
     event AuthorizedUpgradeSelf(address indexed canUpgradeAddress);
     event DisableContractUpgrade(uint256 timestamp);
-    event SetStakingContract(address indexed target);
 
     modifier onlyLockTransferAdminOrOwner() {
         require(lockTransferAdmins[msg.sender] || msg.sender == owner(), "Not lock transfer admin");
@@ -74,10 +69,9 @@ contract Token is
         __UUPSUpgradeable_init();
         __Ownable_init(initialOwner);
 
-        supplyFixedYears = 4;
-        amountCanMintPerYear = 50_000_000_000 * 10 ** decimals();
+       
 
-        initSupply = 400_000_000_000 * 10 ** decimals();
+        initSupply = 600_000_000_000 * 10 ** decimals();
         _mint(initialOwner, initSupply);
         isLockActive = true;
         deployedAt = block.timestamp;
@@ -146,22 +140,6 @@ contract Token is
         }
 
         return super.transferFrom(from, to, amount);
-    }
-
-    function setStakingContract(address stakingContract) external onlyOwner {
-        stakingContractAddress = stakingContract;
-        emit SetStakingContract(stakingContract);
-    }
-
-    function mint() external {
-        require(stakingContractAddress != address(0), "Invalid staking contract address");
-        uint256 yearsSinceDeploy = (block.timestamp - deployedAt) / 365 days;
-        require(yearsSinceDeploy >= supplyFixedYears, "Minting not allowed yet");
-        require(mintedPerYear[yearsSinceDeploy] < amountCanMintPerYear, "Exceeds annual mint limit");
-
-        mintedPerYear[yearsSinceDeploy] += amountCanMintPerYear;
-        _mint(stakingContractAddress, amountCanMintPerYear);
-        emit Mint(stakingContractAddress, amountCanMintPerYear);
     }
 
     function calculateLockedAmountAndUpdate(address from) public returns (uint256) {
