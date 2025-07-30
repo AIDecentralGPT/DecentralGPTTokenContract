@@ -50,8 +50,6 @@ contract Token is
     event Mint(address indexed to, uint256 amount);
     event AddLockTransferAdmin(address indexed addr);
     event RemoveLockTransferAdmin(address indexed addr);
-    event AuthorizedUpgradeSelf(address indexed canUpgradeAddress);
-    event DisableContractUpgrade(uint256 timestamp);
     event SetStakingContract(address indexed target);
 
     modifier onlyLockTransferAdminOrOwner() {
@@ -87,12 +85,12 @@ contract Token is
         require(newImplementation != address(0), "Invalid implementation address");
     }
 
-    function disableLockPermanently() external onlyOwner {
+    function disableLock() external onlyOwner {
         isLockActive = false;
         emit LockDisabled(block.timestamp, block.number);
     }
 
-    function enableLockPermanently() external onlyOwner {
+    function enableLock() external onlyOwner {
         isLockActive = true;
         emit LockEnabled(block.timestamp, block.number);
     }
@@ -208,7 +206,7 @@ contract Token is
         return (total, availableAmount);
     }
 
-    function getLockAmountAndUnlockAt(address caller, uint16 index) public view returns (uint256, uint256) {
+    function getLockAmountAndUnlockAt(address caller, uint256 index) public view returns (uint256, uint256) {
         require(index < walletLockTimestamp[caller].length, "Index out of range");
         LockInfo memory lockInfo = walletLockTimestamp[caller][index];
         return (lockInfo.lockedAmount, lockInfo.unlockAt);
