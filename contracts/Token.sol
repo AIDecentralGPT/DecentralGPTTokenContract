@@ -46,7 +46,6 @@ contract Token is
     event LockDisabled(uint256 timestamp, uint256 blockNumber);
     event LockEnabled(uint256 timestamp, uint256 blockNumber);
     event TransferAndLock(address indexed from, address indexed to, uint256 value, uint256 blockNumber);
-    event UpdateLockDuration(address indexed wallet, uint256 lockSeconds);
     event Mint(address indexed to, uint256 amount);
     event AddLockTransferAdmin(address indexed addr);
     event RemoveLockTransferAdmin(address indexed addr);
@@ -62,10 +61,8 @@ contract Token is
         _disableInitializers();
     }
 
-    function initialize(
-        address initialOwner
-    ) public initializer {
-         __ERC20_init("DecentralGPT", "DGC");
+    function initialize(address initialOwner) public initializer {
+        __ERC20_init("DecentralGPT", "DGC");
         __ReentrancyGuard_init();
         __ERC20Permit_init("DecentralGPT");
         __ERC20Burnable_init();
