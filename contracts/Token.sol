@@ -42,12 +42,8 @@ contract Token is
     event LockDisabled(uint256 timestamp, uint256 blockNumber);
     event LockEnabled(uint256 timestamp, uint256 blockNumber);
     event TransferAndLock(address indexed from, address indexed to, uint256 value, uint256 blockNumber);
-    event UpdateLockDuration(address indexed wallet, uint256 lockSeconds);
-    event Mint(address indexed to, uint256 amount);
     event AddLockTransferAdmin(address indexed addr);
     event RemoveLockTransferAdmin(address indexed addr);
-    event AuthorizedUpgradeSelf(address indexed canUpgradeAddress);
-    event DisableContractUpgrade(uint256 timestamp);
 
     modifier onlyLockTransferAdminOrOwner() {
         require(lockTransferAdmins[msg.sender] || msg.sender == owner(), "Not lock transfer admin");
@@ -59,17 +55,13 @@ contract Token is
         _disableInitializers();
     }
 
-    function initialize(
-        address initialOwner
-    ) public initializer {
-         __ERC20_init("DecentralGPT", "DGC");
+    function initialize(address initialOwner) public initializer {
+        __ERC20_init("DecentralGPT", "DGC");
         __ReentrancyGuard_init();
         __ERC20Permit_init("DecentralGPT");
         __ERC20Burnable_init();
         __UUPSUpgradeable_init();
         __Ownable_init(initialOwner);
-
-       
 
         initSupply = 600_000_000_000 * 10 ** decimals();
         _mint(initialOwner, initSupply);
@@ -81,12 +73,12 @@ contract Token is
         require(newImplementation != address(0), "Invalid implementation address");
     }
 
-    function disableLockPermanently() external onlyOwner {
+    function disableLock() external onlyOwner {
         isLockActive = false;
         emit LockDisabled(block.timestamp, block.number);
     }
 
-    function enableLockPermanently() external onlyOwner {
+    function enableLock() external onlyOwner {
         isLockActive = true;
         emit LockEnabled(block.timestamp, block.number);
     }
@@ -186,7 +178,7 @@ contract Token is
         return (total, availableAmount);
     }
 
-    function getLockAmountAndUnlockAt(address caller, uint16 index) public view returns (uint256, uint256) {
+    function getLockAmountAndUnlockAt(address caller, uint256 index) public view returns (uint256, uint256) {
         require(index < walletLockTimestamp[caller].length, "Index out of range");
         LockInfo memory lockInfo = walletLockTimestamp[caller][index];
         return (lockInfo.lockedAmount, lockInfo.unlockAt);
