@@ -105,6 +105,20 @@ contract Token is
     //     emit UpdateLockDuration(wallet, lockSeconds);
     // }
 
+    function burn(uint256 amount) public virtual override {
+        if (isLockActive && walletLockTimestamp[msg.sender].length > 0) {
+            require(canTransferAmount(msg.sender, amount), "Insufficient unlocked balance");
+        }
+        super.burn(amount);
+    }
+
+    function burnFrom(address account, uint256 amount) public virtual override {
+        if (isLockActive && walletLockTimestamp[account].length > 0) {
+            require(canTransferAmount(account, amount), "Insufficient unlocked balance");
+        }
+        super.burnFrom(account, amount);
+    }
+
     function transferAndLock(address to, uint256 value, uint256 lockSeconds) external onlyLockTransferAdminOrOwner {
         require(lockSeconds > 0, "Invalid lock duration");
         uint256 lockedAt = block.timestamp;
