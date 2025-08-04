@@ -44,7 +44,7 @@ const config: HardhatUserConfig = {
     dbcMainnet: {
       url: 'https://rpc.dbcwallet.io',
       accounts: {
-        mnemonic: process.env.MNEMONIC || '',
+        mnemonic: process.env.PRIVATE_KEY || '',
       },
       chainId: 19880818,
       timeout: 600000,
