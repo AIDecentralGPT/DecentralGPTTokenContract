@@ -19,21 +19,21 @@ const config: HardhatUserConfig = {
       url: 'https://testnet-rpc.bitlayer.org', 
       chainId: 200810,
       // accounts: ["b5eb18473a135e9edf076c00df53d76575fa86bca530c7a650921161189a4ac"],
-      accounts: [process.env.PRIVATE_KEY],
+      accounts: [process.env.PRIVATE_KEY || ''],
     },
     bscTestnet :{
       url: 'https://data-seed-prebsc-1-s3.binance.org:8545',
       chainId: 97,
-      accounts: [process.env.BSC_PRIVATE_KEY],
+      accounts: [process.env.BSC_PRIVATE_KEY || ''],
     },
     bsc: {
-      url: process.env.BSC_MAINNET_RPC_URL,
-      accounts: [process.env.BSC_PRIVATE_KEY],
+      url: process.env.BSC_MAINNET_RPC_URL || '',
+      accounts: [process.env.BSC_PRIVATE_KEY || ''],
       chainId: 56,
     },
     dbcTestnet: {
       url: 'https://rpc-testnet.dbcwallet.io',
-      accounts: [process.env.DBC_TEST_PRIVATE_KEY],
+      accounts: [process.env.DBC_TEST_PRIVATE_KEY || ''],
 
       // accounts: {
       //   mnemonic: process.env.DBC_TEST_MNEMONIC || '',
@@ -43,9 +43,7 @@ const config: HardhatUserConfig = {
     },
     dbcMainnet: {
       url: 'https://rpc.dbcwallet.io',
-      accounts: {
-        mnemonic: process.env.PRIVATE_KEY || '',
-      },
+      accounts: [process.env.PRIVATE_KEY || ''],
       chainId: 19880818,
       timeout: 600000,
     }
@@ -57,8 +55,8 @@ const config: HardhatUserConfig = {
       // An API key needs to be written as the hardhat-verify plugin will require it, and the verification will fail if it is not provided.
       // The current bitlayer browser has not yet enabled API key verification, so you can write any random string for now.
       bitlayertestnet: "1234",
-      bscTestnet: process.env.BSC_TESTNET_API_KEY,
-      bsc: process.env.BSC_API_KEY
+      bscTestnet: process.env.BSC_TESTNET_API_KEY || '',
+      bsc: process.env.BSC_API_KEY || ''
     },
     customChains: [
       {

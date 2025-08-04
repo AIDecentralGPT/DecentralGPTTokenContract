@@ -32,8 +32,6 @@ contract Token is
     bool public isLockActive;
     uint256 public initSupply;
     uint256 public lockLimit;
-    uint256 public deployedAt;
-    uint256 public amountToIAO;
 
     mapping(uint256 => uint256) public mintedPerYear;
     mapping(address => LockInfo[]) private walletLockTimestamp;
@@ -66,7 +64,6 @@ contract Token is
         initSupply = 600_000_000_000 * 10 ** decimals();
         _mint(initialOwner, initSupply);
         isLockActive = true;
-        deployedAt = block.timestamp;
     }
 
     function _authorizeUpgrade(address newImplementation) internal view override onlyOwner {
@@ -86,15 +83,6 @@ contract Token is
     function updateLockLimit(uint256 _lockLimit) external onlyOwner {
         lockLimit = _lockLimit;
     }
-
-    // function updateLockDuration(address wallet, uint256 lockSeconds) external onlyOwner {
-    //     require(wallet != owner(), "Invalid wallet address");
-    //     LockInfo[] storage lockInfos = walletLockTimestamp[wallet];
-    //     for (uint256 i = 0; i < lockInfos.length; i++) {
-    //         lockInfos[i].unlockAt = lockInfos[i].lockedAt + lockSeconds;
-    //     }
-    //     emit UpdateLockDuration(wallet, lockSeconds);
-    // }
 
     function burn(uint256 amount) public virtual override {
         if (isLockActive && walletLockTimestamp[msg.sender].length > 0) {
