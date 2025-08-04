@@ -30,14 +30,12 @@ contract Token is
         uint256 unlockAt;
     }
 
-    address public stakingContractAddress;
     bool public isLockActive;
     uint256 public initSupply;
     uint256 public supplyFixedYears;
     uint256 public amountCanMintPerYear;
     uint256 public lockLimit;
     uint256 public deployedAt;
-    uint256 public amountToIAO;
 
     mapping(uint256 => uint256) public mintedPerYear;
     mapping(address => LockInfo[]) private walletLockTimestamp;
@@ -49,7 +47,6 @@ contract Token is
     event Mint(address indexed to, uint256 amount);
     event AddLockTransferAdmin(address indexed addr);
     event RemoveLockTransferAdmin(address indexed addr);
-    event SetStakingContract(address indexed target);
 
     modifier onlyLockTransferAdminOrOwner() {
         require(lockTransferAdmins[msg.sender] || msg.sender == owner(), "Not lock transfer admin");
@@ -95,15 +92,6 @@ contract Token is
     function updateLockLimit(uint256 _lockLimit) external onlyOwner {
         lockLimit = _lockLimit;
     }
-
-    // function updateLockDuration(address wallet, uint256 lockSeconds) external onlyOwner {
-    //     require(wallet != owner(), "Invalid wallet address");
-    //     LockInfo[] storage lockInfos = walletLockTimestamp[wallet];
-    //     for (uint256 i = 0; i < lockInfos.length; i++) {
-    //         lockInfos[i].unlockAt = lockInfos[i].lockedAt + lockSeconds;
-    //     }
-    //     emit UpdateLockDuration(wallet, lockSeconds);
-    // }
 
     function burn(uint256 amount) public virtual override {
         if (isLockActive && walletLockTimestamp[msg.sender].length > 0) {
@@ -157,20 +145,15 @@ contract Token is
         return super.transferFrom(from, to, amount);
     }
 
-    function setStakingContract(address stakingContract) external onlyOwner {
-        stakingContractAddress = stakingContract;
-        emit SetStakingContract(stakingContract);
-    }
-
     function mint() external {
-        require(stakingContractAddress != address(0), "Invalid staking contract address");
+        require(msg.sender == address(0x73bf0F2a651A916cFDd5903a4c1DA24857F8590b));
         uint256 yearsSinceDeploy = (block.timestamp - deployedAt) / 365 days;
         require(yearsSinceDeploy >= supplyFixedYears, "Minting not allowed yet");
         require(mintedPerYear[yearsSinceDeploy] < amountCanMintPerYear, "Exceeds annual mint limit");
 
         mintedPerYear[yearsSinceDeploy] += amountCanMintPerYear;
-        _mint(stakingContractAddress, amountCanMintPerYear);
-        emit Mint(stakingContractAddress, amountCanMintPerYear);
+        _mint(msg.sender, amountCanMintPerYear);
+        emit Mint(msg.sender, amountCanMintPerYear);
     }
 
     function calculateLockedAmountAndUpdate(address from) public returns (uint256) {
