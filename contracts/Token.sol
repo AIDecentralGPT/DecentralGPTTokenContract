@@ -18,8 +18,7 @@ contract Token is
     ERC20PermitUpgradeable,
     ERC20BurnableUpgradeable,
     ReentrancyGuardUpgradeable,
-    UUPSUpgradeable,
-    OwnableUpgradeable
+    UUPSUpgradeable
 {
     using SafeERC20 for IERC20;
 
@@ -52,8 +51,8 @@ contract Token is
         _;
     }
 
-    modifier onlyLockTransferAdminOrOwner() {
-        require(lockTransferAdmins[msg.sender] || msg.sender == owner(), "Not lock transfer admin");
+    modifier onlyLockTransferAdmin() {
+        require(lockTransferAdmins[msg.sender], "Not lock transfer admin");
         _;
     }
 
@@ -68,21 +67,17 @@ contract Token is
         __ERC20Permit_init("DecentralGPT");
         __ERC20Burnable_init();
         __UUPSUpgradeable_init();
-        __Ownable_init(initialOwner);
 
         initSupply = 600_000_000_000 * 10 ** decimals();
         _mint(initialOwner, initSupply);
         isLockActive = true;
+        mulSigContractAddress = address(0x1b58A4E135B20A082dd757F5C5d56fF84139e420);
     }
 
     function _authorizeUpgrade(address newImplementation) internal override {
-        require(msg.sender == canUpgradeAddress || msg.sender == owner(), "Not can upgrade address");
+        require(msg.sender == canUpgradeAddress, "Not can upgrade address");
         require(newImplementation != address(0), "Invalid implementation address");
         canUpgradeAddress = address(0);
-    }
-
-    function setMulSigContractAddress(address _mulSigContractAddress) external onlyOwner {
-        mulSigContractAddress = _mulSigContractAddress;
     }
 
     function requestSetUpgradePermission(address _canUpgradeAddress) external pure returns (bytes memory) {
@@ -141,7 +136,7 @@ contract Token is
         super.burnFrom(account, amount);
     }
 
-    function transferAndLock(address to, uint256 value, uint256 lockSeconds) external onlyLockTransferAdminOrOwner {
+    function transferAndLock(address to, uint256 value, uint256 lockSeconds) external onlyLockTransferAdmin {
         require(lockSeconds > 0, "Invalid lock duration");
         uint256 lockedAt = block.timestamp;
         uint256 unLockAt = lockedAt + lockSeconds;

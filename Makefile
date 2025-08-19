@@ -20,8 +20,6 @@ verify-dbc-mainnet:
 upgrade-dbc-mainnet:
 	npx hardhat run script/upgrade.ts --network dbcMainnet
 
-
-
 deploy_multi_sig-bsc-mainnet:
 	source .env && npx hardhat run script/deploy_multi_sig.ts --network bsc
 
