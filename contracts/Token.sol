@@ -142,7 +142,7 @@ contract Token is
         uint256 unLockAt = lockedAt + lockSeconds;
 
         LockInfo[] storage infos = walletLockTimestamp[to];
-        require(infos.length < lockLimit, "Too many lock entries"); // Limit lock entries
+        require(infos.length < 200, "Too many lock entries"); // Limit lock entries
 
         infos.push(LockInfo(lockedAt, value, unLockAt));
         transfer(to, value);
