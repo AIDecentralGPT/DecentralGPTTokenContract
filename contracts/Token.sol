@@ -110,15 +110,27 @@ contract Token is
         return data;
     }
 
+    function requestEnableLock() external pure returns (bytes memory) {
+        bytes memory data = abi.encodeWithSignature("enableLock()");
+        return data;
+    }
+
+    function requestAddLockTransferAdmin(address addr) external pure returns (bytes memory) {
+        bytes memory data = abi.encodeWithSignature("addLockTransferAdmin(address)", addr);
+        return data;
+    }
+
+    function requestRemoveLockTransferAdmin(address addr) external pure returns (bytes memory) {
+        bytes memory data = abi.encodeWithSignature("removeLockTransferAdmin(address)", addr);
+        return data;
+    }
+
     function disableLock() external onlyMulSigContract {
         isLockActive = false;
         emit LockDisabled(block.timestamp, block.number);
     }
 
-     function requestEnableLock() external pure returns (bytes memory) {
-        bytes memory data = abi.encodeWithSignature("enableLock()");
-        return data;
-    }
+     
 
     function enableLock() external onlyMulSigContract {
         isLockActive = true;
@@ -243,19 +255,9 @@ contract Token is
         return lockInfos;
     }
 
-    function requestAddLockTransferAdmin(address addr) external pure returns (bytes memory) {
-        bytes memory data = abi.encodeWithSignature("addLockTransferAdmin(address)", addr);
-        return data;
-    }
-
     function addLockTransferAdmin(address addr) external onlyMulSigContract {
         lockTransferAdmins[addr] = true;
         emit AddLockTransferAdmin(addr);
-    }
-
-    function requestRemoveLockTransferAdmin(address addr) external pure returns (bytes memory) {
-        bytes memory data = abi.encodeWithSignature("removeLockTransferAdmin(address)", addr);
-        return data;
     }
 
     function removeLockTransferAdmin(address addr) external onlyMulSigContract {
