@@ -45,6 +45,7 @@ contract Token is
     event TransferAndLock(address indexed from, address indexed to, uint256 value, uint256 blockNumber);
     event AddLockTransferAdmin(address indexed addr);
     event RemoveLockTransferAdmin(address indexed addr);
+    event AuthorizedUpgradeSelf(address indexed canUpgradeAddress);
 
     modifier onlyLockTransferAdminOrOwner() {
         require(lockTransferAdmins[msg.sender] || msg.sender == owner(), "Not lock transfer admin");
