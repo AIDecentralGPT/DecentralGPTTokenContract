@@ -12,7 +12,6 @@ import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-/// @custom:oz-upgrades-from OldToken
 contract Token is
     Initializable,
     ERC20Upgradeable,
@@ -41,12 +40,21 @@ contract Token is
     mapping(address => LockInfo[]) private walletLockTimestamp;
     mapping(address => bool) public lockTransferAdmins;
 
+    address public canUpgradeAddress;
+    address public mulSigContractAddress;
+
     event LockDisabled(uint256 timestamp, uint256 blockNumber);
     event LockEnabled(uint256 timestamp, uint256 blockNumber);
     event TransferAndLock(address indexed from, address indexed to, uint256 value, uint256 blockNumber);
     event Mint(address indexed to, uint256 amount);
     event AddLockTransferAdmin(address indexed addr);
     event RemoveLockTransferAdmin(address indexed addr);
+    event AuthorizedUpgradeSelf(address indexed canUpgradeAddress);
+
+    modifier onlyMulSigContract() {
+        require(msg.sender == mulSigContractAddress, "Not mul sig contract");
+        _;
+    }
 
     modifier onlyLockTransferAdminOrOwner() {
         require(lockTransferAdmins[msg.sender] || msg.sender == owner(), "Not lock transfer admin");
@@ -75,22 +83,46 @@ contract Token is
         deployedAt = block.timestamp;
     }
 
-    function _authorizeUpgrade(address newImplementation) internal view override onlyOwner {
+    function _authorizeUpgrade(address newImplementation) internal override {
+        require(msg.sender == canUpgradeAddress || msg.sender == owner(), "Not can upgrade address");
         require(newImplementation != address(0), "Invalid implementation address");
+        canUpgradeAddress = address(0);
     }
 
-    function disableLock() external onlyOwner {
+    function setMulSigContractAddress(address _mulSigContractAddress) external onlyOwner {
+        mulSigContractAddress = _mulSigContractAddress;
+    }
+
+    function requestSetUpgradePermission(address _canUpgradeAddress) external pure returns (bytes memory) {
+        bytes memory data = abi.encodeWithSignature("setUpgradePermission(address)", _canUpgradeAddress);
+        return data;
+    }
+
+    function setUpgradePermission(address _canUpgradeAddress) external onlyMulSigContract {
+        require(_canUpgradeAddress != address(0), "Invalid address");
+        canUpgradeAddress = _canUpgradeAddress;
+        emit AuthorizedUpgradeSelf(_canUpgradeAddress);
+    }
+
+
+    function requestDisableLock() external pure returns (bytes memory) {
+        bytes memory data = abi.encodeWithSignature("disableLock()");
+        return data;
+    }
+
+    function disableLock() external onlyMulSigContract {
         isLockActive = false;
         emit LockDisabled(block.timestamp, block.number);
     }
 
-    function enableLock() external onlyOwner {
-        isLockActive = true;
-        emit LockEnabled(block.timestamp, block.number);
+     function requestEnableLock() external pure returns (bytes memory) {
+        bytes memory data = abi.encodeWithSignature("enableLock()");
+        return data;
     }
 
-    function updateLockLimit(uint256 _lockLimit) external onlyOwner {
-        lockLimit = _lockLimit;
+    function enableLock() external onlyMulSigContract {
+        isLockActive = true;
+        emit LockEnabled(block.timestamp, block.number);
     }
 
     function burn(uint256 amount) public virtual override {
@@ -211,12 +243,22 @@ contract Token is
         return lockInfos;
     }
 
-    function addLockTransferAdmin(address addr) external onlyOwner {
+    function requestAddLockTransferAdmin(address addr) external pure returns (bytes memory) {
+        bytes memory data = abi.encodeWithSignature("addLockTransferAdmin(address)", addr);
+        return data;
+    }
+
+    function addLockTransferAdmin(address addr) external onlyMulSigContract {
         lockTransferAdmins[addr] = true;
         emit AddLockTransferAdmin(addr);
     }
 
-    function removeLockTransferAdmin(address addr) external onlyOwner {
+    function requestRemoveLockTransferAdmin(address addr) external pure returns (bytes memory) {
+        bytes memory data = abi.encodeWithSignature("removeLockTransferAdmin(address)", addr);
+        return data;
+    }
+
+    function removeLockTransferAdmin(address addr) external onlyMulSigContract {
         lockTransferAdmins[addr] = false;
         emit RemoveLockTransferAdmin(addr);
     }

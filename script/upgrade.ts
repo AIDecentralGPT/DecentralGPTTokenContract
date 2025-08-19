@@ -1,6 +1,6 @@
 const { ethers, upgrades } = require("hardhat");
 
-async function main() {
+async function upgradeDGC() {
     const contract = await ethers.getContractFactory("Token");
 
     await upgrades.upgradeProxy(
@@ -10,4 +10,4 @@ async function main() {
     console.log("contract upgraded");
 }
 
-main();
+upgradeDGC();
