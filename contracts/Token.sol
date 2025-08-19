@@ -37,6 +37,9 @@ contract Token is
     mapping(address => LockInfo[]) private walletLockTimestamp;
     mapping(address => bool) public lockTransferAdmins;
 
+    address public canUpgradeAddress;
+    address public mulSigContractAddress;
+
     event LockDisabled(uint256 timestamp, uint256 blockNumber);
     event LockEnabled(uint256 timestamp, uint256 blockNumber);
     event TransferAndLock(address indexed from, address indexed to, uint256 value, uint256 blockNumber);
