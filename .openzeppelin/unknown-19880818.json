@@ -70,6 +70,11 @@
       "address": "0xa8D3fc491dbb041B0dc8Ff43f4cC0eE54dA802E4",
       "txHash": "0xe79cf59228e4d8035f471364bbd5d38a63c375880ad7856b2061ea6ea5686c84",
       "kind": "uups"
+    },
+    {
+      "address": "0xF478522583DbE97476D4D09645Da8785a8502568",
+      "txHash": "0x0291ef1fac26b9991d1cb1ca48a07d07318187b8a0cc11ffb6318e7b12caf290",
+      "kind": "uups"
     }
   ],
   "impls": {
@@ -7150,7 +7155,7 @@
             "label": "walletLockTimestamp",
             "offset": 0,
             "slot": "7",
-            "type": "t_mapping(t_address,t_array(t_struct(LockInfo)5258_storage)dyn_storage)",
+            "type": "t_mapping(t_address,t_array(t_struct(LockInfo)7041_storage)dyn_storage)",
             "contract": "Token",
             "src": "contracts/Token.sol:40"
           },
@@ -7332,11 +7337,11 @@
             "label": "uint64",
             "numberOfBytes": "8"
           },
-          "t_array(t_struct(LockInfo)5258_storage)dyn_storage": {
+          "t_array(t_struct(LockInfo)7041_storage)dyn_storage": {
             "label": "struct Token.LockInfo[]",
             "numberOfBytes": "32"
           },
-          "t_mapping(t_address,t_array(t_struct(LockInfo)5258_storage)dyn_storage)": {
+          "t_mapping(t_address,t_array(t_struct(LockInfo)7041_storage)dyn_storage)": {
             "label": "mapping(address => struct Token.LockInfo[])",
             "numberOfBytes": "32"
           },
@@ -7348,7 +7353,7 @@
             "label": "mapping(uint256 => uint256)",
             "numberOfBytes": "32"
           },
-          "t_struct(LockInfo)5258_storage": {
+          "t_struct(LockInfo)7041_storage": {
             "label": "struct Token.LockInfo",
             "members": [
               {
