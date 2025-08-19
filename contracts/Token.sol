@@ -84,13 +84,9 @@ contract Token is
     }
 
     function _authorizeUpgrade(address newImplementation) internal override {
-        require(msg.sender == canUpgradeAddress || msg.sender == owner(), "Not can upgrade address");
+        require(msg.sender == canUpgradeAddress, "Not can upgrade address");
         require(newImplementation != address(0), "Invalid implementation address");
         canUpgradeAddress = address(0);
-    }
-
-    function setMulSigContractAddress(address _mulSigContractAddress) external onlyOwner {
-        mulSigContractAddress = _mulSigContractAddress;
     }
 
     function requestSetUpgradePermission(address _canUpgradeAddress) external pure returns (bytes memory) {
