@@ -19,8 +19,8 @@ verify-bsc:
 upgrade-bsc:
 	npx hardhat run script/upgrade.ts --network bsc
 
-upgrade-bsc-testnet:
-	npx hardhat run script/upgrade.ts --network bscTestnet
+
+
 
 deploy-dbc-mainnet:
 	npx hardhat run script/deploy_upgradable.ts --network dbcMainnet

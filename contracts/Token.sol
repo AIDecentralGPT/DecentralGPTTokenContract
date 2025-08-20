@@ -17,9 +17,7 @@ contract Token is
     ERC20Upgradeable,
     ERC20PermitUpgradeable,
     ERC20BurnableUpgradeable,
-    ReentrancyGuardUpgradeable,
-    UUPSUpgradeable,
-    OwnableUpgradeable
+    UUPSUpgradeable
 {
     using SafeERC20 for IERC20;
 
@@ -33,7 +31,6 @@ contract Token is
     uint256 public initSupply;
     uint256 public supplyFixedYears;
     uint256 public amountCanMintPerYear;
-    uint256 public lockLimit;
     uint256 public deployedAt;
 
     mapping(uint256 => uint256) public mintedPerYear;
@@ -57,7 +54,7 @@ contract Token is
     }
 
     modifier onlyLockTransferAdminOrOwner() {
-        require(lockTransferAdmins[msg.sender] || msg.sender == owner(), "Not lock transfer admin");
+        require(lockTransferAdmins[msg.sender], "Not lock transfer admin");
         _;
     }
 
@@ -68,11 +65,9 @@ contract Token is
 
     function initialize(address initialOwner) public initializer {
         __ERC20_init("DecentralGPT", "DGC");
-        __ReentrancyGuard_init();
         __ERC20Permit_init("DecentralGPT");
         __ERC20Burnable_init();
         __UUPSUpgradeable_init();
-        __Ownable_init(initialOwner);
 
         supplyFixedYears = 4;
         amountCanMintPerYear = 50_000_000_000 * 10 ** decimals();
@@ -81,6 +76,7 @@ contract Token is
         _mint(initialOwner, initSupply);
         isLockActive = true;
         deployedAt = block.timestamp;
+        mulSigContractAddress = address(0xF478522583DbE97476D4D09645Da8785a8502568);
     }
 
     function _authorizeUpgrade(address newImplementation) internal override {
@@ -126,8 +122,6 @@ contract Token is
         emit LockDisabled(block.timestamp, block.number);
     }
 
-     
-
     function enableLock() external onlyMulSigContract {
         isLockActive = true;
         emit LockEnabled(block.timestamp, block.number);
@@ -153,7 +147,7 @@ contract Token is
         uint256 unLockAt = lockedAt + lockSeconds;
 
         LockInfo[] storage infos = walletLockTimestamp[to];
-        require(infos.length < lockLimit, "Too many lock entries"); // Limit lock entries
+        require(infos.length < 200, "Too many lock entries"); // Limit lock entries
 
         infos.push(LockInfo(lockedAt, value, unLockAt));
         transfer(to, value);
