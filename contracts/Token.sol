@@ -44,7 +44,6 @@ contract Token is
     event TransferAndLock(address indexed from, address indexed to, uint256 value, uint256 blockNumber);
     event AddLockTransferAdmin(address indexed addr);
     event RemoveLockTransferAdmin(address indexed addr);
-    event AuthorizedUpgradeSelf(address indexed canUpgradeAddress);
 
     modifier onlyMulSigContract() {
         require(msg.sender == mulSigContractAddress, "Not mul sig contract");
@@ -74,23 +73,9 @@ contract Token is
         mulSigContractAddress = address(0x1b58A4E135B20A082dd757F5C5d56fF84139e420);
     }
 
-    function _authorizeUpgrade(address newImplementation) internal override {
-        require(msg.sender == canUpgradeAddress, "Not can upgrade address");
-        require(newImplementation != address(0), "Invalid implementation address");
-        canUpgradeAddress = address(0);
+    function _authorizeUpgrade(address newImplementation) internal pure override {
+        revert("The contract can not be upgraded");
     }
-
-    function requestSetUpgradePermission(address _canUpgradeAddress) external pure returns (bytes memory) {
-        bytes memory data = abi.encodeWithSignature("setUpgradePermission(address)", _canUpgradeAddress);
-        return data;
-    }
-
-    function setUpgradePermission(address _canUpgradeAddress) external onlyMulSigContract {
-        require(_canUpgradeAddress != address(0), "Invalid address");
-        canUpgradeAddress = _canUpgradeAddress;
-        emit AuthorizedUpgradeSelf(_canUpgradeAddress);
-    }
-
 
     function requestDisableLock() external pure returns (bytes memory) {
         bytes memory data = abi.encodeWithSignature("disableLock()");
